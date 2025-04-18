@@ -1,0 +1,983 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Farming Game with Money Transfers</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 15px;
+            background-color: #f5f5f5;
+        }
+
+        .button-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .toggle-btn {
+            font-size: 20px;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            background-color: #4CAF50;
+            color: white;
+            position: relative;
+            flex: 1;
+            min-width: 120px;
+            text-align: center;
+        }
+
+        .toggle-btn.active {
+            background-color: #388E3C;
+            box-shadow: inset 0 0 5px rgba(0,0,0,0.2);
+        }
+
+        .selection-panel {
+            display: none;
+            background-color: white;
+            border-radius: 8px;
+            padding: 10px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .selection-panel.active {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .selection-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+            cursor: pointer;
+            padding: 5px;
+            border-radius: 5px;
+            transition: background-color 0.2s;
+        }
+
+        .selection-item:hover {
+            background-color: #f0f0f0;
+        }
+
+        .selection-emoji {
+            font-size: 30px;
+        }
+
+        .selection-price {
+            font-size: 14px;
+            background-color: #4CAF50;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 10px;
+        }
+
+        .field-container {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .field {
+            aspect-ratio: 1/1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 30px;
+            background-color: white;
+            border-radius: 8px;
+            cursor: pointer;
+            position: relative;
+            box-shadow: 0 2px 3px rgba(0,0,0,0.1);
+        }
+
+        .timer {
+            position: absolute;
+            bottom: 5px;
+            font-size: 11px;
+            color: #666;
+        }
+
+        .ready-message {
+            position: absolute;
+            bottom: 20px;
+            font-size: 11px;
+            color: #388E3C;
+            font-weight: bold;
+            width: 100%;
+            text-align: center;
+        }
+
+        .money-display {
+            font-size: 22px;
+            font-weight: bold;
+            margin: 15px 0;
+            text-align: center;
+        }
+
+        .ready {
+            background-color: #aaffaa !important;
+            animation: pulse 1s infinite;
+        }
+
+        .animal-section {
+            margin-top: 20px;
+            padding: 12px;
+            background-color: #e8f5e9;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .animal-pen {
+            display: flex;
+            gap: 12px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .animal {
+            font-size: 30px;
+            position: relative;
+            padding: 5px;
+        }
+
+        .animal-product {
+            position: absolute;
+            bottom: -10px;
+            right: -10px;
+            font-size: 14px;
+            background-color: white;
+            border-radius: 20px;
+            padding: 2px 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 0 5px rgba(0,0,0,0.2);
+            min-width: 25px;
+        }
+
+        .buildings-section {
+            margin-top: 20px;
+            padding: 12px;
+            background-color: #e3f2fd;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .buildings-panel {
+            display: none;
+            background-color: white;
+            border-radius: 8px;
+            padding: 10px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .buildings-panel.active {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+        }
+        
+        .building {
+            font-size: 30px;
+            position: relative;
+            padding: 5px;
+            text-align: center;
+        }
+        
+        .building-count {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            font-size: 14px;
+            background-color: #2196F3;
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Username modal styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            width: 300px;
+            text-align: center;
+        }
+
+        .modal h2 {
+            margin-top: 0;
+        }
+
+        .modal input {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            box-sizing: border-box;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        .modal button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        /* Send money section */
+        .send-money-section {
+            margin-top: 20px;
+            padding: 12px;
+            background-color: #fff3e0;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .send-money-form {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .send-money-form input {
+            flex: 1;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        .send-money-form button {
+            background-color: #ff9800;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        /* User list styles */
+        .user-list {
+            margin-top: 10px;
+            max-height: 150px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 5px;
+        }
+
+        .user-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .user-info {
+            flex: 1;
+        }
+
+        .user-send-form {
+            display: flex;
+            gap: 8px;
+        }
+
+        .user-send-form input {
+            width: 60px;
+            padding: 4px;
+        }
+
+        .user-send-form button {
+            background-color: #ff9800;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 4px 8px;
+            cursor: pointer;
+        }
+
+        /* Notification styles */
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #4CAF50;
+            color: white;
+            padding: 15px;
+            border-radius: 5px;
+            z-index: 1000;
+            display: none;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        .new-product {
+            animation: pop 0.5s;
+        }
+
+        @keyframes pop {
+            0% { transform: scale(0); }
+            80% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+
+        @media (max-width: 500px) {
+            .selection-emoji {
+                font-size: 24px;
+            }
+            
+            .field {
+                font-size: 24px;
+            }
+            
+            .animal {
+                font-size: 24px;
+            }
+            
+            .toggle-btn {
+                font-size: 18px;
+                padding: 8px 12px;
+                min-width: 100px;
+            }
+
+            .send-money-form {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Username Modal -->
+    <div id="username-modal" class="modal">
+        <div class="modal-content">
+            <h2>Enter Your Username</h2>
+            <input type="text" id="username-input" placeholder="Your username" maxlength="20">
+            <button id="submit-username">Start Farming</button>
+        </div>
+    </div>
+
+    <!-- Notification -->
+    <div id="notification" class="notification"></div>
+
+    <!-- Main Game Content -->
+    <div id="game-content" style="display: none;">
+        <div class="money-display">💰 Money: $<span id="money">0</span></div>
+        
+        <div class="button-row">
+            <button id="plant-btn" class="toggle-btn">🌱 Plants</button>
+            <button id="animal-btn" class="toggle-btn">🐷 Animals</button>
+            <button id="building-btn" class="toggle-btn">🏢 Buildings</button>
+        </div>
+        
+        <div id="plant-panel" class="selection-panel">
+            <!-- Plant buttons will be added here -->
+        </div>
+        
+        <div id="animal-panel" class="selection-panel">
+            <!-- Animal buttons will be added here -->
+        </div>
+        
+        <div id="building-panel" class="buildings-panel">
+            <!-- Building buttons will be added here -->
+        </div>
+        
+        <div class="field-container"></div>
+        
+        <div class="animal-section">
+            <h3>Your Animals</h3>
+            <div class="animal-pen" id="animal-pen"></div>
+        </div>
+        
+        <div class="buildings-section">
+            <h3>Your Buildings</h3>
+            <div class="buildings-list" id="buildings-list"></div>
+        </div>
+
+        <!-- Send Money Section -->
+        <div class="send-money-section">
+            <h3>Send Money to Other Players</h3>
+            <div class="user-list" id="user-list">
+                <div class="user-item">Loading players...</div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // WebSocket connection
+        const ws = new WebSocket(`ws://${window.location.hostname}:3000`);
+        
+        // Game elements
+        const moneyDisplay = document.getElementById('money');
+        const plantBtn = document.getElementById('plant-btn');
+        const animalBtn = document.getElementById('animal-btn');
+        const buildingBtn = document.getElementById('building-btn');
+        const plantPanel = document.getElementById('plant-panel');
+        const animalPanel = document.getElementById('animal-panel');
+        const buildingPanel = document.getElementById('building-panel');
+        const grid = document.querySelector('.field-container');
+        const animalPen = document.getElementById('animal-pen');
+        const buildingsList = document.getElementById('buildings-list');
+        const usernameModal = document.getElementById('username-modal');
+        const usernameInput = document.getElementById('username-input');
+        const submitUsernameBtn = document.getElementById('submit-username');
+        const gameContent = document.getElementById('game-content');
+        const notification = document.getElementById('notification');
+        const userList = document.getElementById('user-list');
+        
+        // Game state
+        let money = 0;
+        let gridState = Array(4).fill().map(() => Array(4).fill(null));
+        let selectedField = null;
+        let animals = [];
+        let buildings = {};
+        let activePanel = null;
+        let myUsername = null;
+        
+        // Vegetables with planting costs and sell prices
+        const veglist = [
+            { emoji: '🥦', name: 'Broccoli', price: 3, sellPrice: 10 },
+            { emoji: '🥬', name: 'Lettuce', price: 2, sellPrice: 8 },
+            { emoji: '🥕', name: 'Carrot', price: 2, sellPrice: 7 },
+            { emoji: '🍆', name: 'Eggplant', price: 4, sellPrice: 12 },
+            { emoji: '🥒', name: 'Cucumber', price: 3, sellPrice: 9 },
+            { emoji: '🧅', name: 'Onion', price: 1, sellPrice: 6 },
+            { emoji: '🥔', name: 'Potato', price: 1, sellPrice: 5 }
+        ];
+        
+        // Animals
+        const animalTypes = [
+            { emoji: '🐔', name: 'Chicken', price: 30, produce: '🥚', produceValue: 5, produceTime: 10000 },
+            { emoji: '🐄', name: 'Cow', price: 80, produce: '🥛', produceValue: 15, produceTime: 15000 },
+            { emoji: '🐑', name: 'Sheep', price: 50, produce: '🧶', produceValue: 8, produceTime: 12000 }
+        ];
+        
+        // Buildings
+        const buildingTypes = [
+            { emoji: '🏭', name: 'Factory', price: 500000, income: 10000, incomeInterval: 60000 },
+            { emoji: '🏨', name: 'Hotel', price: 750000, income: 15000, incomeInterval: 60000 },
+            { emoji: '🏢', name: 'Office', price: 1000000, income: 25000, incomeInterval: 60000 }
+        ];
+
+        // Initialize game
+        function init() {
+            createGrid();
+            setupButtons();
+            updateMoney();
+            // Initialize buildings object with counts
+            buildingTypes.forEach(building => {
+                buildings[building.name] = { count: 0, element: null };
+            });
+        }
+        
+        // Create farm grid
+        function createGrid() {
+            for (let i = 0; i < 4; i++) {
+                for (let j = 0; j < 4; j++) {
+                    const field = document.createElement('div');
+                    field.className = 'field';
+                    field.dataset.row = i;
+                    field.dataset.col = j;
+                    field.addEventListener('click', handleFieldClick);
+                    grid.appendChild(field);
+                    
+                    // Initialize grid state
+                    if (!gridState[i]) gridState[i] = [];
+                    gridState[i][j] = null;
+                }
+            }
+        }
+        
+        // Setup buttons
+        function setupButtons() {
+            // Plant toggle button
+            plantBtn.addEventListener('click', () => {
+                if (activePanel === 'plant') {
+                    deactivateAllPanels();
+                } else {
+                    activatePanel('plant');
+                }
+            });
+            
+            // Animal toggle button
+            animalBtn.addEventListener('click', () => {
+                if (activePanel === 'animal') {
+                    deactivateAllPanels();
+                } else {
+                    activatePanel('animal');
+                }
+            });
+            
+            // Building toggle button
+            buildingBtn.addEventListener('click', () => {
+                if (activePanel === 'building') {
+                    deactivateAllPanels();
+                } else {
+                    activatePanel('building');
+                }
+            });
+            
+            // Create plant selection items
+            veglist.forEach(veg => {
+                const item = document.createElement('div');
+                item.className = 'selection-item';
+                item.title = `${veg.name} - Sells for $${veg.sellPrice}`;
+                item.innerHTML = `
+                    <div class="selection-emoji">${veg.emoji}</div>
+                    <div class="selection-price">$${veg.price}</div>
+                `;
+                item.addEventListener('click', () => {
+                    if (money >= veg.price) {
+                        placeVegInField(veg);
+                        deactivateAllPanels();
+                    } else {
+                        showNotification(`You need $${veg.price} to plant ${veg.name}!`, 'error');
+                    }
+                });
+                plantPanel.appendChild(item);
+            });
+            
+            // Create animal selection items
+            animalTypes.forEach(animal => {
+                const item = document.createElement('div');
+                item.className = 'selection-item';
+                item.title = `${animal.name} - Produces ${animal.produce} every ${animal.produceTime/1000}s`;
+                item.innerHTML = `
+                    <div class="selection-emoji">${animal.emoji}</div>
+                    <div class="selection-price">$${animal.price}</div>
+                `;
+                item.addEventListener('click', () => {
+                    buyAnimal(animal);
+                    deactivateAllPanels();
+                });
+                animalPanel.appendChild(item);
+            });
+            
+            // Create building selection items
+            buildingTypes.forEach(building => {
+                const item = document.createElement('div');
+                item.className = 'selection-item';
+                item.title = `${building.name} - $${building.price}\nGenerates $${building.income} every minute`;
+                item.innerHTML = `
+                    <div class="selection-emoji">${building.emoji}</div>
+                    <div class="selection-price">$${building.price.toLocaleString()}</div>
+                `;
+                item.addEventListener('click', () => {
+                    buyBuilding(building);
+                    deactivateAllPanels();
+                });
+                buildingPanel.appendChild(item);
+            });
+        }
+        
+        // Activate a panel
+        function activatePanel(panelType) {
+            deactivateAllPanels();
+            activePanel = panelType;
+            
+            if (panelType === 'plant') {
+                plantPanel.classList.add('active');
+                plantBtn.classList.add('active');
+            } else if (panelType === 'animal') {
+                animalPanel.classList.add('active');
+                animalBtn.classList.add('active');
+            } else if (panelType === 'building') {
+                buildingPanel.classList.add('active');
+                buildingBtn.classList.add('active');
+            }
+        }
+        
+        // Deactivate all panels
+        function deactivateAllPanels() {
+            plantPanel.classList.remove('active');
+            animalPanel.classList.remove('active');
+            buildingPanel.classList.remove('active');
+            plantBtn.classList.remove('active');
+            animalBtn.classList.remove('active');
+            buildingBtn.classList.remove('active');
+            activePanel = null;
+        }
+        
+        // Handle field clicks
+        function handleFieldClick(event) {
+            const field = event.target;
+            const row = parseInt(field.dataset.row);
+            const col = parseInt(field.dataset.col);
+            
+            // First check if coordinates are valid
+            if (isNaN(row) || isNaN(col) || row < 0 || row >= 4 || col < 0 || col >= 4) {
+                return;
+            }
+            
+            // Check if the field exists in gridState
+            if (!gridState[row] || gridState[row][col] === null || gridState[row][col] === undefined) {
+                // Field is empty, select for planting
+                selectedField = field;
+                activatePanel('plant');
+                return;
+            }
+            
+            // Check if ready to harvest
+            if (gridState[row][col].ready) {
+                harvestVegetable(row, col);
+                return;
+            }
+            
+            // Field is occupied but not ready
+            return;
+        }
+        
+        // Plant vegetable
+        function placeVegInField(veg) {
+            if (!selectedField) return;
+            
+            const row = parseInt(selectedField.dataset.row);
+            const col = parseInt(selectedField.dataset.col);
+            const field = selectedField;
+            
+            // Validate coordinates
+            if (isNaN(row) || isNaN(col) || row < 0 || row >= 4 || col < 0 || col >= 4) {
+                return;
+            }
+            
+            // Deduct planting cost
+            money -= veg.price;
+            updateMoney();
+            
+            // Plant the vegetable
+            field.innerHTML = veg.emoji;
+            
+            // Create timer
+            const timerElement = document.createElement('div');
+            timerElement.className = 'timer';
+            field.appendChild(timerElement);
+            
+            // Set growth time (5-10 seconds)
+            const growTime = 5000 + Math.random() * 5000;
+            let remainingTime = Math.ceil(growTime / 1000);
+            timerElement.textContent = `${remainingTime}s`;
+            
+            // Update grid state
+            if (!gridState[row]) gridState[row] = [];
+            gridState[row][col] = {
+                veg: veg,
+                ready: false,
+                timerElement: timerElement,
+                fieldElement: field
+            };
+            
+            // Start growth timer
+            const timerInterval = setInterval(() => {
+                remainingTime--;
+                timerElement.textContent = `${remainingTime}s`;
+                
+                if (remainingTime <= 0) {
+                    clearInterval(timerInterval);
+                    gridState[row][col].ready = true;
+                    field.classList.add('ready');
+                    
+                    // Create "Sell for $X" message
+                    const readyMessage = document.createElement('div');
+                    readyMessage.className = 'ready-message';
+                    readyMessage.textContent = `Sell for $${veg.sellPrice}`;
+                    field.appendChild(readyMessage);
+                }
+            }, 1000);
+            
+            selectedField = null;
+        }
+        
+        // Harvest vegetable
+        function harvestVegetable(row, col) {
+            // Validate coordinates and check if field exists
+            if (!gridState[row] || !gridState[row][col] || !gridState[row][col].ready) {
+                return;
+            }
+            
+            const veg = gridState[row][col].veg;
+            money += veg.sellPrice;
+            updateMoney();
+            
+            // Reset field
+            const field = gridState[row][col].fieldElement;
+            if (field) {
+                field.innerHTML = '';
+                field.classList.remove('ready');
+            }
+            gridState[row][col] = null;
+        }
+        
+        // Buy animal
+        function buyAnimal(animal) {
+            if (money >= animal.price) {
+                money -= animal.price;
+                updateMoney();
+                
+                // Add to pen
+                const animalElement = document.createElement('div');
+                animalElement.className = 'animal';
+                animalElement.innerHTML = animal.emoji;
+                animalElement.title = `${animal.name} - Produces ${animal.produce}`;
+                
+                // Create product counter
+                const productCounter = document.createElement('div');
+                productCounter.className = 'animal-product';
+                productCounter.textContent = `${animal.produce}x0`;
+                productCounter.dataset.count = 0;
+                productCounter.dataset.value = animal.produceValue;
+                
+                animalElement.appendChild(productCounter);
+                animalPen.appendChild(animalElement);
+                
+                // Store animal data
+                animals.push({
+                    ...animal,
+                    element: animalElement,
+                    productCounter: productCounter,
+                    intervalId: null
+                });
+                
+                // Start production
+                startAnimalProduction(animal, animalElement, productCounter);
+            } else {
+                showNotification(`Not enough money to buy ${animal.name}!`, 'error');
+            }
+        }
+        
+        // Animal production
+        function startAnimalProduction(animal, animalElement, productCounter) {
+            const intervalId = setInterval(() => {
+                // Increase product count
+                let currentCount = parseInt(productCounter.dataset.count);
+                currentCount++;
+                productCounter.dataset.count = currentCount;
+                productCounter.textContent = `${animal.produce}x${currentCount}`;
+                productCounter.classList.add('new-product');
+                
+                // Remove animation class after it completes
+                setTimeout(() => {
+                    productCounter.classList.remove('new-product');
+                }, 500);
+                
+                // Set click handler if not already set
+                if (!productCounter.onclick) {
+                    productCounter.onclick = function(e) {
+                        e.stopPropagation();
+                        if (this.dataset.count > 0) {
+                            let count = parseInt(this.dataset.count);
+                            count--;
+                            this.dataset.count = count;
+                            this.textContent = `${animal.produce}x${count}`;
+                            
+                            // Add money
+                            money += parseInt(this.dataset.value);
+                            updateMoney();
+                        }
+                    };
+                }
+            }, animal.produceTime);
+            
+            // Store interval ID for cleanup
+            const animalObj = animals.find(a => a.element === animalElement);
+            if (animalObj) {
+                animalObj.intervalId = intervalId;
+            }
+        }
+        
+        // Buy building
+        function buyBuilding(building) {
+            if (money >= building.price) {
+                money -= building.price;
+                updateMoney();
+                
+                // Update building count
+                buildings[building.name].count++;
+                
+                // Create or update building display
+                if (!buildings[building.name].element) {
+                    const buildingElement = document.createElement('div');
+                    buildingElement.className = 'building';
+                    buildingElement.innerHTML = `
+                        ${building.emoji}
+                        <div class="building-count">${buildings[building.name].count}</div>
+                    `;
+                    buildingElement.title = `${building.name}\nGenerates $${building.income} every minute`;
+                    buildingsList.appendChild(buildingElement);
+                    buildings[building.name].element = buildingElement;
+                    
+                    // Start income generation
+                    const intervalId = setInterval(() => {
+                        money += building.income;
+                        updateMoney();
+                        showNotification(`${building.name} generated $${building.income}!`);
+                    }, building.incomeInterval);
+                    
+                    // Store interval ID (though we won't clear it in this simple game)
+                } else {
+                    buildings[building.name].element.querySelector('.building-count').textContent = 
+                        buildings[building.name].count;
+                }
+                
+                // Show purchase message
+                showNotification(`You bought a ${building.name}! It will generate $${building.income} every minute.`);
+            } else {
+                showNotification(`You need $${building.price.toLocaleString()} to buy a ${building.name}!`, 'error');
+            }
+        }
+        
+        // Update money display
+        function updateMoney() {
+            moneyDisplay.textContent = money.toLocaleString();
+        }
+        
+        // Show username modal on start
+        usernameModal.style.display = 'flex';
+        
+        // Submit username
+        submitUsernameBtn.addEventListener('click', () => {
+            const username = usernameInput.value.trim();
+            if (username) {
+                // Send username to server
+                ws.send(JSON.stringify({
+                    type: 'setUsername',
+                    username: username
+                }));
+            } else {
+                showNotification('Please enter a username', 'error');
+            }
+        });
+        
+        // Handle WebSocket messages
+        ws.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            
+            switch (data.type) {
+                case 'userData':
+                    myUsername = data.username;
+                    money = data.money;
+                    updateMoney();
+                    usernameModal.style.display = 'none';
+                    gameContent.style.display = 'block';
+                    showNotification(`Welcome, ${data.username}!`);
+                    break;
+                    
+                case 'userList':
+                    updateUserList(data.users);
+                    break;
+                    
+                case 'notification':
+                    showNotification(data.message);
+                    break;
+                    
+                case 'error':
+                    showNotification(data.message, 'error');
+                    break;
+            }
+        };
+        
+        // Update user list
+        function updateUserList(users) {
+            userList.innerHTML = '';
+            
+            if (users.length === 0) {
+                userList.innerHTML = '<div class="user-item">No other players online</div>';
+                return;
+            }
+            
+            users.forEach(user => {
+                if (user.username === myUsername) return; // Skip self
+                
+                const userElement = document.createElement('div');
+                userElement.className = 'user-item';
+                userElement.innerHTML = `
+                    <div class="user-info">${user.username} ($${user.money.toLocaleString()})</div>
+                    <div class="user-send-form">
+                        <input type="number" id="send-${user.username}" placeholder="Amount" min="1">
+                        <button onclick="sendMoney('${user.username}')">Send</button>
+                    </div>
+                `;
+                userList.appendChild(userElement);
+            });
+        }
+        
+        // Send money function
+        function sendMoney(recipient) {
+            const amountInput = document.getElementById(`send-${recipient}`);
+            const amount = parseFloat(amountInput.value);
+            
+            if (isNaN(amount) || amount <= 0) {
+                showNotification('Please enter a valid amount', 'error');
+                return;
+            }
+            
+            if (amount > money) {
+                showNotification('Not enough money', 'error');
+                return;
+            }
+            
+            ws.send(JSON.stringify({
+                type: 'sendMoney',
+                recipient: recipient,
+                amount: amount
+            }));
+            
+            amountInput.value = '';
+        }
+        
+        // Show notification
+        function showNotification(message, type = 'success') {
+            notification.textContent = message;
+            notification.style.backgroundColor = type === 'error' ? '#f44336' : '#4CAF50';
+            notification.style.display = 'block';
+            
+            setTimeout(() => {
+                notification.style.display = 'none';
+            }, 3000);
+        }
+        
+        // Initialize game when WebSocket is open
+        ws.onopen = () => {
+            console.log('Connected to WebSocket server');
+            init();
+        };
+    </script>
+</body>
+</html>
