@@ -409,18 +409,84 @@
         </div>
         
         <div id="plant-panel" class="selection-panel">
-            <!-- Plant buttons will be added here -->
+            <div class="selection-item" title="Broccoli - Sells for $10">
+                <div class="selection-emoji">🥦</div>
+                <div class="selection-price">$3</div>
+            </div>
+            <div class="selection-item" title="Lettuce - Sells for $8">
+                <div class="selection-emoji">🥬</div>
+                <div class="selection-price">$2</div>
+            </div>
+            <div class="selection-item" title="Carrot - Sells for $7">
+                <div class="selection-emoji">🥕</div>
+                <div class="selection-price">$2</div>
+            </div>
+            <div class="selection-item" title="Eggplant - Sells for $12">
+                <div class="selection-emoji">🍆</div>
+                <div class="selection-price">$4</div>
+            </div>
+            <div class="selection-item" title="Cucumber - Sells for $9">
+                <div class="selection-emoji">🥒</div>
+                <div class="selection-price">$3</div>
+            </div>
+            <div class="selection-item" title="Onion - Sells for $6">
+                <div class="selection-emoji">🧅</div>
+                <div class="selection-price">$1</div>
+            </div>
+            <div class="selection-item" title="Potato - Sells for $5">
+                <div class="selection-emoji">🥔</div>
+                <div class="selection-price">$1</div>
+            </div>
         </div>
         
         <div id="animal-panel" class="selection-panel">
-            <!-- Animal buttons will be added here -->
+            <div class="selection-item" title="Chicken - Produces 🥚 every 10s">
+                <div class="selection-emoji">🐔</div>
+                <div class="selection-price">$30</div>
+            </div>
+            <div class="selection-item" title="Cow - Produces 🥛 every 15s">
+                <div class="selection-emoji">🐄</div>
+                <div class="selection-price">$80</div>
+            </div>
+            <div class="selection-item" title="Sheep - Produces 🧶 every 12s">
+                <div class="selection-emoji">🐑</div>
+                <div class="selection-price">$50</div>
+            </div>
         </div>
         
         <div id="building-panel" class="buildings-panel">
-            <!-- Building buttons will be added here -->
+            <div class="selection-item" title="Factory - $500,000\nGenerates $10000 every minute">
+                <div class="selection-emoji">🏭</div>
+                <div class="selection-price">$500K</div>
+            </div>
+            <div class="selection-item" title="Hotel - $750,000\nGenerates $15000 every minute">
+                <div class="selection-emoji">🏨</div>
+                <div class="selection-price">$750K</div>
+            </div>
+            <div class="selection-item" title="Office - $1,000,000\nGenerates $25000 every minute">
+                <div class="selection-emoji">🏢</div>
+                <div class="selection-price">$1M</div>
+            </div>
         </div>
         
-        <div class="field-container"></div>
+        <div class="field-container">
+            <div class="field" data-row="0" data-col="0"></div>
+            <div class="field" data-row="0" data-col="1"></div>
+            <div class="field" data-row="0" data-col="2"></div>
+            <div class="field" data-row="0" data-col="3"></div>
+            <div class="field" data-row="1" data-col="0"></div>
+            <div class="field" data-row="1" data-col="1"></div>
+            <div class="field" data-row="1" data-col="2"></div>
+            <div class="field" data-row="1" data-col="3"></div>
+            <div class="field" data-row="2" data-col="0"></div>
+            <div class="field" data-row="2" data-col="1"></div>
+            <div class="field" data-row="2" data-col="2"></div>
+            <div class="field" data-row="2" data-col="3"></div>
+            <div class="field" data-row="3" data-col="0"></div>
+            <div class="field" data-row="3" data-col="1"></div>
+            <div class="field" data-row="3" data-col="2"></div>
+            <div class="field" data-row="3" data-col="3"></div>
+        </div>
         
         <div class="animal-section">
             <h3>Your Animals</h3>
@@ -442,8 +508,10 @@
     </div>
     
     <script>
-        // WebSocket connection
-        const ws = new WebSocket(`wss://${window.location.hostname}:3000`);
+        // WebSocket connection management
+        let ws;
+        let isWsReady = false;
+        const messageQueue = [];
         
         // Game elements
         const moneyDisplay = document.getElementById('money');
@@ -497,33 +565,86 @@
             { emoji: '🏢', name: 'Office', price: 1000000, income: 25000, incomeInterval: 60000 }
         ];
 
+        // Initialize WebSocket connection
+        function initWebSocket() {
+            ws = new WebSocket(`ws://${window.location.hostname}:3000`);
+            
+            ws.onopen = () => {
+                console.log('WebSocket connection established');
+                isWsReady = true;
+                // Process any queued messages
+                while (messageQueue.length > 0) {
+                    const msg = messageQueue.shift();
+                    safeWsSend(msg);
+                }
+                initGame();
+            };
+            
+            ws.onclose = () => {
+                console.log('WebSocket connection closed');
+                isWsReady = false;
+                showNotification('Connection lost. Trying to reconnect...', 'error');
+                setTimeout(initWebSocket, 3000);
+            };
+            
+            ws.onerror = (error) => {
+                console.error('WebSocket error:', error);
+                isWsReady = false;
+            };
+            
+            ws.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                handleWsMessage(data);
+            };
+        }
+
+        // Safe WebSocket message sending
+        function safeWsSend(data) {
+            if (isWsReady && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify(data));
+            } else {
+                console.log('Queueing message, connection not ready');
+                messageQueue.push(data);
+                if (!isWsReady && ws.readyState === WebSocket.CONNECTING) {
+                    showNotification('Connecting to server...', 'info');
+                }
+            }
+        }
+
+        // Handle incoming WebSocket messages
+        function handleWsMessage(data) {
+            switch (data.type) {
+                case 'userData':
+                    myUsername = data.username;
+                    money = data.money;
+                    updateMoney();
+                    usernameModal.style.display = 'none';
+                    gameContent.style.display = 'block';
+                    showNotification(`Welcome, ${data.username}!`);
+                    break;
+                    
+                case 'userList':
+                    updateUserList(data.users);
+                    break;
+                    
+                case 'notification':
+                    showNotification(data.message);
+                    break;
+                    
+                case 'error':
+                    showNotification(data.message, 'error');
+                    break;
+            }
+        }
+
         // Initialize game
-        function init() {
-            createGrid();
+        function initGame() {
             setupButtons();
             updateMoney();
             // Initialize buildings object with counts
             buildingTypes.forEach(building => {
                 buildings[building.name] = { count: 0, element: null };
             });
-        }
-        
-        // Create farm grid
-        function createGrid() {
-            for (let i = 0; i < 4; i++) {
-                for (let j = 0; j < 4; j++) {
-                    const field = document.createElement('div');
-                    field.className = 'field';
-                    field.dataset.row = i;
-                    field.dataset.col = j;
-                    field.addEventListener('click', handleFieldClick);
-                    grid.appendChild(field);
-                    
-                    // Initialize grid state
-                    if (!gridState[i]) gridState[i] = [];
-                    gridState[i][j] = null;
-                }
-            }
         }
         
         // Setup buttons
@@ -555,15 +676,9 @@
                 }
             });
             
-            // Create plant selection items
-            veglist.forEach(veg => {
-                const item = document.createElement('div');
-                item.className = 'selection-item';
-                item.title = `${veg.name} - Sells for $${veg.sellPrice}`;
-                item.innerHTML = `
-                    <div class="selection-emoji">${veg.emoji}</div>
-                    <div class="selection-price">$${veg.price}</div>
-                `;
+            // Add click handlers to plant selection items
+            document.querySelectorAll('#plant-panel .selection-item').forEach((item, index) => {
+                const veg = veglist[index];
                 item.addEventListener('click', () => {
                     if (money >= veg.price) {
                         placeVegInField(veg);
@@ -572,39 +687,24 @@
                         showNotification(`You need $${veg.price} to plant ${veg.name}!`, 'error');
                     }
                 });
-                plantPanel.appendChild(item);
             });
             
-            // Create animal selection items
-            animalTypes.forEach(animal => {
-                const item = document.createElement('div');
-                item.className = 'selection-item';
-                item.title = `${animal.name} - Produces ${animal.produce} every ${animal.produceTime/1000}s`;
-                item.innerHTML = `
-                    <div class="selection-emoji">${animal.emoji}</div>
-                    <div class="selection-price">$${animal.price}</div>
-                `;
+            // Add click handlers to animal selection items
+            document.querySelectorAll('#animal-panel .selection-item').forEach((item, index) => {
+                const animal = animalTypes[index];
                 item.addEventListener('click', () => {
                     buyAnimal(animal);
                     deactivateAllPanels();
                 });
-                animalPanel.appendChild(item);
             });
             
-            // Create building selection items
-            buildingTypes.forEach(building => {
-                const item = document.createElement('div');
-                item.className = 'selection-item';
-                item.title = `${building.name} - $${building.price}\nGenerates $${building.income} every minute`;
-                item.innerHTML = `
-                    <div class="selection-emoji">${building.emoji}</div>
-                    <div class="selection-price">$${building.price.toLocaleString()}</div>
-                `;
+            // Add click handlers to building selection items
+            document.querySelectorAll('#building-panel .selection-item').forEach((item, index) => {
+                const building = buildingTypes[index];
                 item.addEventListener('click', () => {
                     buyBuilding(building);
                     deactivateAllPanels();
                 });
-                buildingPanel.appendChild(item);
             });
         }
         
@@ -875,43 +975,14 @@
         submitUsernameBtn.addEventListener('click', () => {
             const username = usernameInput.value.trim();
             if (username) {
-                // Send username to server
-                ws.send(JSON.stringify({
+                safeWsSend({
                     type: 'setUsername',
                     username: username
-                }));
+                });
             } else {
                 showNotification('Please enter a username', 'error');
             }
         });
-        
-        // Handle WebSocket messages
-        ws.onmessage = (event) => {
-            const data = JSON.parse(event.data);
-            
-            switch (data.type) {
-                case 'userData':
-                    myUsername = data.username;
-                    money = data.money;
-                    updateMoney();
-                    usernameModal.style.display = 'none';
-                    gameContent.style.display = 'block';
-                    showNotification(`Welcome, ${data.username}!`);
-                    break;
-                    
-                case 'userList':
-                    updateUserList(data.users);
-                    break;
-                    
-                case 'notification':
-                    showNotification(data.message);
-                    break;
-                    
-                case 'error':
-                    showNotification(data.message, 'error');
-                    break;
-            }
-        };
         
         // Update user list
         function updateUserList(users) {
@@ -953,11 +1024,11 @@
                 return;
             }
             
-            ws.send(JSON.stringify({
+            safeWsSend({
                 type: 'sendMoney',
                 recipient: recipient,
                 amount: amount
-            }));
+            });
             
             amountInput.value = '';
         }
@@ -973,11 +1044,10 @@
             }, 3000);
         }
         
-        // Initialize game when WebSocket is open
-        ws.onopen = () => {
-            console.log('Connected to WebSocket server');
-            init();
-        };
+        // Initialize WebSocket connection when page loads
+        window.addEventListener('load', () => {
+            initWebSocket();
+        });
     </script>
 </body>
 </html>
